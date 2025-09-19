@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Calculator ~ aK</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #6a11cb;
+            --accent-color-hover: #500a9d;
+            --card-bg: #282828;
+            --border-color: #333;
+            --input-bg: #333;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --logo-size: 100px;
+            --header-height: 120px;
+            --progress-bar-bg: #444;
+            --progress-bar-fill: #2575fc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            background-color: var(--container-bg);
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 15px 40px var(--shadow-color);
+            transition: all 0.5s ease;
+            position: relative;
+            opacity: 0;
+            transform: scale(0.9);
+            min-height: 90vh;
+        }
+
+        .container.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .initial-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-color);
+            z-index: 100;
+            cursor: pointer;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .initial-screen.hidden {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .initial-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-color), #2575fc);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .initial-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .initial-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-color), #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .portal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .portal.active {
+            pointer-events: auto;
+            animation: portalEffect 0.5s forwards;
+        }
+
+        @keyframes portalEffect {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: top 1s ease-in-out, transform 1s ease-in-out, margin 1s ease-in-out;
+            width: 100%;
+        }
+
+        .header.minimized {
+            position: relative;
+            top: auto;
+            left: auto;
+            transform: none;
+            justify-content: flex-start;
+            margin-bottom: 0;
+            padding: 0;
+        }
+
+        .header.minimized .header-title {
+            font-size: 1.5rem;
+        }
+
+        .header.minimized .logo {
+            width: 50px;
+            height: 50px;
+        }
+
+        .header.summary-view {
+            position: relative;
+            top: auto;
+            left: auto;
+            transform: none;
+            justify-content: center;
+            flex-direction: column;
+            margin-bottom: 30px;
+            transition: all 1s ease-in-out;
+        }
+
+        .header.summary-view .logo {
+            width: 80px;
+            height: 80px;
+            margin-right: 0;
+            margin-bottom: 10px;
+        }
+
+        .header.summary-view .header-title {
+            font-size: 2.2rem;
+            text-align: center;
+        }
+
+
+        .header-title {
+            color: #fff;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-color), #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0;
+            transition: font-size 1s ease-in-out;
+        }
+
+        .logo {
+            width: var(--logo-size);
+            height: var(--logo-size);
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            margin-right: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: white;
+            animation: none;
+            overflow: hidden;
+            flex-shrink: 0;
+            transition: width 1s ease-in-out, height 1s ease-in-out, margin 1s ease-in-out;
+        }
+
+        .logo img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: var(--progress-bar-bg);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--accent-color), var(--progress-bar-fill));
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .content {
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            padding-top: var(--header-height);
+        }
+
+        .content.active {
+            opacity: 1;
+        }
+        
+        .product-group {
+            display: none;
+            animation: fadeIn 1s ease-in-out;
+        }
+        
+        .product-group.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .instructions, .summary, .final-list-container {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--accent-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .instructions:hover, .summary:hover, .final-list-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        h3, h2 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+
+        th {
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr {
+            background-color: var(--container-bg);
+        }
+
+        tr:nth-child(even) {
+            background-color: #212121;
+        }
+
+        tr:hover {
+            background-color: #2e2e2e;
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: summaryItemFadeIn 0.5s forwards;
+        }
+
+        @keyframes summaryItemFadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .total {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #fff;
+            background: linear-gradient(90deg, var(--accent-color), #2575fc);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 14px 30px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--accent-color-hover);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.reset {
+            background-color: #e74c3c;
+        }
+
+        button.reset:hover {
+            background-color: #c0392b;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(224, 224, 224, 0.5);
+            font-size: 0.9rem;
+            font-style: italic;
+            text-align: center;
+            width: 100%;
+        }
+
+        #finalProductListContainer {
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+            animation-delay: 1s;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            .header {
+                flex-direction: column;
+            }
+            .logo {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+            .header-title {
+                font-size: 2rem;
+            }
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            th, td {
+                font-size: 0.9rem;
+                padding: 10px 12px;
+            }
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            .header.minimized {
+                padding: 0;
+                top: auto;
+                position: relative;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="initial-screen" id="initialScreen">
+        <div class="initial-logo">
+            <img src="C:\Users\Anand\Desktop\Calculator\med.jpg" alt="Medicolife Logo">
+        </div>
+        <h1 class="initial-title">Medicolife Private Limited</h1>
+    </div>
+
+    <div class="portal" id="portal"></div>
+
+    <div class="container" id="mainContainer">
+
+        <header class="header" id="header">
+            <div class="logo" id="logo">
+                <img src="C:\Users\Anand\Desktop\Calculator\med.jpg" alt="Medicolife Logo">
+            </div>
+            <h1 class="header-title" id="headerTitle">Medicolife Private Limited</h1>
+        </header>
+        
+        <div class="content" id="content">
+            <div class="instructions">
+                <h3>📝 Quick Guide:</h3>
+                <p>1. Enter the required quantity for the products below.</p>
+                <p>2. Click 'Next' to move to the next set of products.</p>
+                <p>3. The summary will be displayed at the end.</p>
+            </div>
+
+            <div id="productGroupsContainer">
+                </div>
+
+            <div class="action-buttons">
+                <button id="backBtn" style="display: none;">⬅️ Back</button>
+                <button id="nextBtn" style="display: none;">➡️ Next</button>
+                <button id="calculateBtn" style="display: none;">📊 Show Summary</button>
+                <button class="reset" id="resetBtn">🔄 Reset All</button>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div id="finalProductListContainer" style="display: none;">
+                <h2>📦 All Products in Your Order</h2>
+                <div class="final-list-container">
+                    <table class="final-table">
+                        <thead>
+                            <tr>
+                                <th>Product Details</th>
+                                <th>Ordered Qty</th>
+                                <th>Total Bottles</th>
+                                <th>Total Boxes</th>
+                                <th>Weight of Box (KG)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="finalProductTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="summary" id="summarySection" style="display: none;">
+                <h2>🛒 Order Summary</h2>
+                <div class="summary-item" id="summary-bottles">
+                    <span>Total Bottles:</span>
+                    <span id="totalBottles">0</span>
+                </div>
+                <div class="summary-item" id="summary-boxes">
+                    <span>Total Boxes:</span>
+                    <span id="totalBoxes">0</span>
+                </div>
+                <div class="summary-item" id="summary-weight">
+                    <span>Total Weight:</span>
+                    <span id="totalWeight">0 KG</span>
+                </div>
+                <div class="summary-item" id="summary-weight-ton">
+                    <span>Total Weight (Ton):</span>
+                    <span id="totalWeightTon">0 T</span>
+                </div>
+                <div class="summary-item total" id="summary-grand-total">
+                    <span>Grand Total:</span>
+                    <span id="grandTotal">0 KG</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        Made by aK
+    </footer>
+
+    <script>
+        const productGroups = [
+            { groupName: "MEDIPHENYL", products: [
+                { details: "MEDIPHENYL", qtyML: 450, packing: 12, weight: 0.45, orderedQty: 0 },
+                { details: "MEDIPHENYL", qtyL: 5, packing: 4, weight: 5, orderedQty: 0 }
+            ]},
+            { groupName: "MEDIPINE", products: [
+                { details: "MEDIPINE", qtyL: 1, packing: 12, weight: 1, orderedQty: 0 },
+                { details: "MEDIPINE", qtyL: 5, packing: 4, weight: 5, orderedQty: 0 }
+            ]},
+            { groupName: "MICROFLUSH", products: [
+                { details: "MICROFLUSH", qtyML: 250, packing: 30, weight: 0.25, orderedQty: 0 },
+                { details: "MICROFLUSH", qtyML: 500, packing: 20, weight: 0.5, orderedQty: 0 },
+                { details: "MICROFLUSH", qtyL: 1, packing: 20, weight: 1, orderedQty: 0 }
+            ]},
+            { groupName: "FLOORMAX", products: [
+                { details: "FLOORMAX", qtyML: 250, packing: 30, weight: 0.25, orderedQty: 0 },
+                { details: "FLOORMAX", qtyML: 500, packing: 20, weight: 0.5, orderedQty: 0 },
+                { details: "FLOORMAX", qtyL: 1, packing: 20, weight: 1, orderedQty: 0 }
+            ]},
+            { groupName: "BATHCLEAN", products: [
+                { details: "BATHCLEAN", qtyML: 250, packing: 30, weight: 0.25, orderedQty: 0 },
+                { details: "BATHCLEAN", qtyML: 500, packing: 30, weight: 0.5, orderedQty: 0 },
+                { details: "BATHCLEAN", qtyL: 1, packing: 16, weight: 1, orderedQty: 0 }
+            ]},
+            { groupName: "ACID CLEANER", products: [
+                { details: "ACID CLEANER", qtyL: 1, packing: 12, weight: 1, orderedQty: 0 },
+                { details: "ACID CLEANER", qtyL: 5, packing: 4, weight: 5, orderedQty: 0 }
+            ]},
+            { groupName: "TOILET BOWL CLEANER", products: [
+                { details: "TOILET BOWL CLEANER", qtyL: 1, packing: 12, weight: 1, orderedQty: 0 }
+            ]},
+            { groupName: "GLASS CLEANER", products: [
+                { details: "GLASS CLEANER", qtyML: 500, packing: 25, weight: 0.5, orderedQty: 0 }
+            ]},
+            { groupName: "BLEACHING POWDER", products: [
+                { details: "BLEACHING POWDER (IN G)", qtyG: 500, packing: 50, weight: 0.5, orderedQty: 0 }
+            ]}
+        ];
+
+        const initialScreen = document.getElementById('initialScreen');
+        const mainContainer = document.getElementById('mainContainer');
+        const portal = document.getElementById('portal');
+        const header = document.getElementById('header');
+        const content = document.getElementById('content');
+        const productGroupsContainer = document.getElementById('productGroupsContainer');
+        const nextBtn = document.getElementById('nextBtn');
+        const backBtn = document.getElementById('backBtn');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const summarySection = document.getElementById('summarySection');
+        const finalProductListContainer = document.getElementById('finalProductListContainer');
+        const finalProductTableBody = document.getElementById('finalProductTableBody');
+        const progressBar = document.getElementById('progressBar');
+        
+        let currentGroupIndex = 0;
+
+        function updateProgressBar() {
+            const progress = (currentGroupIndex / (productGroups.length - 1)) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function createProductGroupHTML(group) {
+            let html = `<div><h2>${group.groupName}</h2>`;
+            html += `<table class="productTable"><thead><tr>
+                <th>Product Details</th>
+                <th>Qty</th>
+                <th>Packing</th>
+                <th>Weight/PC (KG)</th>
+                <th>Ordered Qty</th>
+                <th>Total Bottles</th>
+                <th>Total Boxes</th>
+                <th>Weight of Box (KG)</th>
+            </tr></thead><tbody>`;
+
+            group.products.forEach((product, productIndex) => {
+                const qtyType = product.qtyL ? 'L' : (product.qtyML ? 'ML' : (product.qtyG ? 'G' : ''));
+                const qtyValue = product.qtyL || product.qtyML || product.qtyG;
+                html += `<tr>
+                    <td>${product.details}</td>
+                    <td>${qtyValue} ${qtyType}</td>
+                    <td>${product.packing}</td>
+                    <td>${product.weight}</td>
+                    <td>
+                        <input type="number" min="0" value="${product.orderedQty}"
+                            data-group-index="${currentGroupIndex}" data-product-index="${productIndex}" class="qty-input">
+                    </td>
+                    <td class="bottles-cell">${product.orderedQty * product.packing}</td>
+                    <td class="boxes-cell">${product.orderedQty}</td>
+                    <td class="weight-cell">${(product.orderedQty * product.packing * product.weight).toFixed(2)}</td>
+                </tr>`;
+            });
+            html += `</tbody></table></div>`;
+            return html;
+        }
+
+        function showGroup(index) {
+            productGroupsContainer.innerHTML = createProductGroupHTML(productGroups[index]);
+            document.querySelectorAll('.qty-input').forEach(input => {
+                input.addEventListener('input', handleQuantityChange);
+            });
+            
+            summarySection.style.display = 'none';
+            finalProductListContainer.style.display = 'none';
+            
+            backBtn.style.display = (index > 0) ? 'block' : 'none';
+            calculateBtn.style.display = 'none';
+            nextBtn.style.display = 'block';
+
+            if (index === productGroups.length - 1) {
+                nextBtn.style.display = 'none';
+                calculateBtn.style.display = 'block';
+            }
+            updateProgressBar();
+        }
+        
+        function handleInitialClick() {
+            initialScreen.classList.add('hidden');
+            portal.classList.add('active');
+            
+            setTimeout(() => {
+                header.classList.add('minimized');
+                mainContainer.classList.add('active');
+                content.classList.add('active');
+                portal.classList.remove('active');
+                showGroup(currentGroupIndex);
+            }, 600);
+        }
+
+        function handleNextClick() {
+            currentGroupIndex++;
+            showGroup(currentGroupIndex);
+        }
+
+        function handleBackClick() {
+            currentGroupIndex--;
+            showGroup(currentGroupIndex);
+        }
+
+        function handleQuantityChange(event) {
+            const input = event.target;
+            const groupIndex = parseInt(input.dataset.groupIndex);
+            const productIndex = parseInt(input.dataset.productIndex);
+            const qty = parseInt(input.value) || 0;
+            
+            const product = productGroups[groupIndex].products[productIndex];
+            product.orderedQty = qty;
+
+            const row = input.closest('tr');
+            const totalBottles = qty * product.packing;
+            const totalBoxes = qty;
+            const boxWeight = qty * product.packing * product.weight;
+
+            row.querySelector('.bottles-cell').textContent = totalBottles;
+            row.querySelector('.boxes-cell').textContent = totalBoxes;
+            row.querySelector('.weight-cell').textContent = boxWeight.toFixed(2);
+        }
+
+        function handleCalculateClick() {
+            let totalBottles = 0;
+            let totalBoxes = 0;
+            let totalWeight = 0;
+
+            finalProductTableBody.innerHTML = '';
+            
+            productGroups.forEach(group => {
+                group.products.forEach(product => {
+                    const totalB = product.orderedQty * product.packing;
+                    const totalX = product.orderedQty;
+                    const boxW = product.orderedQty * product.packing * product.weight;
+                    
+                    if (product.orderedQty > 0) {
+                        const row = document.createElement('tr');
+                        const qtyType = product.qtyL ? 'L' : (product.qtyML ? 'ML' : 'G');
+                        const qtyValue = product.qtyL || product.qtyML || product.qtyG;
+                        row.innerHTML = `
+                            <td>${product.details} (${qtyValue} ${qtyType})</td>
+                            <td>${product.orderedQty}</td>
+                            <td>${totalB}</td>
+                            <td>${totalX}</td>
+                            <td>${boxW.toFixed(2)}</td>
+                        `;
+                        finalProductTableBody.appendChild(row);
+                    }
+                    
+                    totalBottles += totalB;
+                    totalBoxes += totalX;
+                    totalWeight += boxW;
+                });
+            });
+
+            const totalWeightTon = totalWeight / 1000;
+            
+            productGroupsContainer.style.display = 'none';
+            document.querySelector('.action-buttons').style.display = 'none';
+            document.getElementById('progressBarContainer').style.display = 'none';
+
+            finalProductListContainer.style.display = 'block';
+            summarySection.style.display = 'block';
+            
+            // FIX: Add the new CSS class to center the header
+            header.classList.remove('minimized');
+            header.classList.add('summary-view');
+
+            const summaryItems = document.querySelectorAll('.summary-item');
+            summaryItems.forEach((item, index) => {
+                item.style.animationDelay = `${0.3 + index * 0.2}s`;
+            });
+
+            document.getElementById('totalBottles').textContent = totalBottles;
+            document.getElementById('totalBoxes').textContent = totalBoxes;
+            document.getElementById('totalWeight').textContent = totalWeight.toFixed(2) + ' KG';
+            document.getElementById('totalWeightTon').textContent = totalWeightTon.toFixed(3) + ' T';
+            document.getElementById('grandTotal').textContent = totalWeight.toFixed(2) + ' KG';
+
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function resetQuantities() {
+            productGroups.forEach(group => {
+                group.products.forEach(product => product.orderedQty = 0);
+            });
+            currentGroupIndex = 0;
+            
+            // FIX: Remove summary view classes and re-add minimized header class
+            header.classList.remove('summary-view');
+            header.classList.add('minimized');
+
+            document.querySelector('.action-buttons').style.display = 'flex';
+            document.getElementById('progressBarContainer').style.display = 'block';
+
+            productGroupsContainer.style.display = 'block';
+            summarySection.style.display = 'none';
+            finalProductListContainer.style.display = 'none';
+            showGroup(currentGroupIndex);
+        }
+
+        window.onload = () => {
+            initialScreen.addEventListener('click', handleInitialClick);
+            nextBtn.addEventListener('click', handleNextClick);
+            backBtn.addEventListener('click', handleBackClick);
+            calculateBtn.addEventListener('click', handleCalculateClick);
+            resetBtn.addEventListener('click', resetQuantities);
+        };
+    </script>
+</body>
+</html>
